@@ -27,7 +27,7 @@ if (!is_dir($baseDir)) {
 }
 
 // GitHub tokeni va repozitoriya ma'lumotlari
-$githubToken = "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"; // GitHub tokenini shu yerga kiriting
+$githubToken = "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"; // GitHub tokenini shu yerga kiriting
 $githubRepo = "UzbekApis/telegrambot"; // GitHub repozitoriya nomini shu yerga kiriting
 $githubBranch = "main"; // Branch nomi
 
