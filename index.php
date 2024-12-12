@@ -15,7 +15,9 @@ if ($text == "/start") {
 } else {
     $response = "You said: $text";
 }
-
+if ($text == "/add") {
+    $response = "salom";
+}
 // Foydalanuvchiga xabar yuboring
 file_get_contents("https://api.telegram.org/bot$TOKEN/sendMessage?chat_id=$chat_id&text=" . urlencode($response));
 ?>
