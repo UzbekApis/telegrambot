@@ -26,10 +26,14 @@ if (!is_dir($baseDir)) {
     mkdir($baseDir, 0777, true);
 }
 
+// GitHub tokeni va repozitoriya ma'lumotlari
+$githubToken = "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"; // GitHub tokenini shu yerga kiriting
+$githubRepo = "UzbekApis/telegrambot"; // GitHub repozitoriya nomini shu yerga kiriting
+$githubBranch = "main"; // Branch nomi
+
 // Funksiyalar
 
 // 1. Faylni yuklash
-// Faylni yuklash
 function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
     // Telegram serveridan fayl ma'lumotlarini olish
     $filePathResponse = file_get_contents("$apiUrl/getFile?file_id=$fileId");
@@ -59,100 +63,45 @@ function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
     // Faylni serverga saqlash
     file_put_contents($savePath, $fileContent);
 
-    // Faylni muvaffaqiyatli saqlaganini bildiruvchi xabar
-    sendMessage($chatId, "Fayl muvaffaqiyatli yuklandi: " . basename($filePath));
-}
-
-/*function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
-    // Telegram serveridan fayl ma'lumotlarini olish
-    $filePathResponse = file_get_contents("$apiUrl/getFile?file_id=$fileId");
-    $filePathResponse = json_decode($filePathResponse, TRUE);
-    
-    // Faylni olishda xatolikni tekshirish
-    if (!isset($filePathResponse["result"]["file_path"])) {
-        sendMessage($chatId, "Faylni olishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
-        return;
-    }
-    
-    $filePath = $filePathResponse["result"]["file_path"];
-    $fileUrl = "https://api.telegram.org/file/bot$botToken/$filePath";
-    
-    // Faylni saqlash
-    $savePath = $baseDir . "/" . basename($filePath);
-    $fileContent = file_get_contents($fileUrl);
-    
-    // Faylni yuklab olishda xatolikni tekshirish
-    if ($fileContent === false) {
-        sendMessage($chatId, "Faylni yuklab olishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
-        return;
-    }
-
-    file_put_contents($savePath, $fileContent);
+    // GitHub-ga yuklash
+    uploadToGitHub($savePath, basename($filePath), $chatId);
 
     // Faylni muvaffaqiyatli saqlaganini bildiruvchi xabar
     sendMessage($chatId, "Fayl muvaffaqiyatli yuklandi: " . basename($filePath));
-}*/
-
-// 2. Faylni o'zgartirish (matn qo'shish)
-function editFile($fileName, $baseDir, $chatId, $newText) {
-    $filePath = $baseDir . "/" . $fileName;
-    if (file_exists($filePath)) {
-        file_put_contents($filePath, $newText, FILE_APPEND);
-        sendMessage($chatId, "Faylga yangi matn qo'shildi: " . $fileName);
-    } else {
-        sendMessage($chatId, "Bunday fayl topilmadi.");
-    }
 }
 
-// 3. Fayllar ro'yxatini ko'rsatish
-function listFiles($baseDir, $chatId) {
-    $files = scandir($baseDir);
-    $files = array_diff($files, ['.', '..']); // "." va ".." ni olib tashlash
+// GitHub-ga faylni yuklash
+function uploadToGitHub($filePath, $fileName, $chatId) {
+    global $githubToken, $githubRepo, $githubBranch;
 
-    if (empty($files)) {
-        sendMessage($chatId, "Hozircha hech qanday fayl yo'q.");
+    $fileContent = base64_encode(file_get_contents($filePath));
+    
+    $url = "https://api.github.com/repos/$githubRepo/contents/$fileName";
+
+    $data = [
+        "message" => "Fayl yuklandi: $fileName",
+        "branch" => $githubBranch,
+        "content" => $fileContent
+    ];
+
+    $options = [
+        "http" => [
+            "header" => "Authorization: token $githubToken\r\n" .
+                        "Content-Type: application/json\r\n",
+            "method" => "PUT",
+            "content" => json_encode($data)
+        ]
+    ];
+
+    $context = stream_context_create($options);
+    $response = file_get_contents($url, false, $context);
+
+    if ($response === FALSE) {
+        sendMessage($chatId, "GitHub-ga faylni yuklashda xatolik yuz berdi.");
         return;
     }
 
-    $message = "Fayllar ro'yxati:\n";
-    foreach ($files as $file) {
-        $message .= "- " . $file . "\n";
-    }
-    sendMessage($chatId, $message);
-}
-
-// 4. Papka yaratish
-function createFolder($folderName, $baseDir, $chatId) {
-    $folderPath = $baseDir . "/" . $folderName;
-    if (!is_dir($folderPath)) {
-        mkdir($folderPath, 0777, true);
-        sendMessage($chatId, "Papka muvaffaqiyatli yaratildi: " . $folderName);
-    } else {
-        sendMessage($chatId, "Bunday papka allaqachon mavjud.");
-    }
-}
-
-// 5. Faylni o'chirish
-function deleteFile($fileName, $baseDir, $chatId) {
-    $filePath = $baseDir . "/" . $fileName;
-    if (file_exists($filePath)) {
-        unlink($filePath);
-        sendMessage($chatId, "Fayl muvaffaqiyatli o'chirildi: " . $fileName);
-    } else {
-        sendMessage($chatId, "Bunday fayl topilmadi.");
-    }
-}
-
-// 6. Faylga izoh qo'shish
-function addCommentToFile($fileName, $baseDir, $comment, $chatId) {
-    $filePath = $baseDir . "/" . $fileName;
-    if (file_exists($filePath)) {
-        $commentFile = $filePath . ".comment";
-        file_put_contents($commentFile, $comment . "\n", FILE_APPEND);
-        sendMessage($chatId, "Izoh muvaffaqiyatli qo'shildi: " . $fileName);
-    } else {
-        sendMessage($chatId, "Bunday fayl topilmadi.");
-    }
+    sendMessage($chatId, "Fayl GitHub-ga muvaffaqiyatli yuklandi: " . $fileName);
 }
 
 // 7. Foydalanuvchiga xabar yuborish
