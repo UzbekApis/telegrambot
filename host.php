@@ -29,7 +29,41 @@ if (!is_dir($baseDir)) {
 // Funksiyalar
 
 // 1. Faylni yuklash
+// Faylni yuklash
 function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
+    // Telegram serveridan fayl ma'lumotlarini olish
+    $filePathResponse = file_get_contents("$apiUrl/getFile?file_id=$fileId");
+    $filePathResponse = json_decode($filePathResponse, TRUE);
+    
+    // Faylni olishda xatolikni tekshirish
+    if (!isset($filePathResponse["result"]["file_path"])) {
+        sendMessage($chatId, "Faylni olishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
+        return;
+    }
+    
+    $filePath = $filePathResponse["result"]["file_path"];
+    $fileUrl = "https://api.telegram.org/file/bot$botToken/$filePath";
+    
+    // Faylni saqlash
+    $savePath = $baseDir . "/" . basename($filePath);
+    
+    // GitHub va Railwayda yuklab olish uchun ba'zi cheklovlar bo'lishi mumkin, shuning uchun bu kodni sinab ko'ring:
+    $fileContent = file_get_contents($fileUrl);
+    
+    // Faylni yuklab olishda xatolikni tekshirish
+    if ($fileContent === false) {
+        sendMessage($chatId, "Faylni yuklab olishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
+        return;
+    }
+
+    // Faylni serverga saqlash
+    file_put_contents($savePath, $fileContent);
+
+    // Faylni muvaffaqiyatli saqlaganini bildiruvchi xabar
+    sendMessage($chatId, "Fayl muvaffaqiyatli yuklandi: " . basename($filePath));
+}
+
+/*function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
     // Telegram serveridan fayl ma'lumotlarini olish
     $filePathResponse = file_get_contents("$apiUrl/getFile?file_id=$fileId");
     $filePathResponse = json_decode($filePathResponse, TRUE);
@@ -57,7 +91,7 @@ function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
 
     // Faylni muvaffaqiyatli saqlaganini bildiruvchi xabar
     sendMessage($chatId, "Fayl muvaffaqiyatli yuklandi: " . basename($filePath));
-}
+}*/
 
 // 2. Faylni o'zgartirish (matn qo'shish)
 function editFile($fileName, $baseDir, $chatId, $newText) {
