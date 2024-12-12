@@ -1,7 +1,7 @@
 <?php
 
 // Bot tokenini o'rnating
-$botToken = "BOT_TOKEN_HERE";
+$botToken = "7295475589:AAFZ20mG7vYEe7D79XOiuta7MPff4AzayUM";
 $apiUrl = "https://api.telegram.org/bot$botToken";
 $baseUrl = "https://telegrambot-production-7458.up.railway.app"; // O'zingizning domeningizni kiriting
 
@@ -9,7 +9,11 @@ $baseUrl = "https://telegrambot-production-7458.up.railway.app"; // O'zingizning
 $update = file_get_contents("php://input");
 $update = json_decode($update, TRUE);
 
-// O'zgaruvchilar
+// Agar xabar bo'lmasa, chiqarib tashlash
+if (!isset($update["message"])) {
+    exit();
+}
+
 $chatId = "1150081918"; ///$update["message"]["chat"]["id"];
 $messageText = $update["message"]["text"] ?? "";
 $fileId = $update["message"]["document"]["file_id"] ?? null;
@@ -32,7 +36,7 @@ function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
     
     // Faylni olishda xatolikni tekshirish
     if (!isset($filePathResponse["result"]["file_path"])) {
-        sendMessage($chatId, "Faylni olishda xatolik yuz berdi.");
+        sendMessage($chatId, "Faylni olishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
         return;
     }
     
@@ -45,17 +49,28 @@ function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
     
     // Faylni yuklab olishda xatolikni tekshirish
     if ($fileContent === false) {
-        sendMessage($chatId, "Faylni yuklab olishda xatolik yuz berdi.");
+        sendMessage($chatId, "Faylni yuklab olishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
         return;
     }
 
     file_put_contents($savePath, $fileContent);
 
-    // Javob yuborish
+    // Faylni muvaffaqiyatli saqlaganini bildiruvchi xabar
     sendMessage($chatId, "Fayl muvaffaqiyatli yuklandi: " . basename($filePath));
 }
 
-// 2. Fayllar ro'yxatini ko'rsatish
+// 2. Faylni o'zgartirish (matn qo'shish)
+function editFile($fileName, $baseDir, $chatId, $newText) {
+    $filePath = $baseDir . "/" . $fileName;
+    if (file_exists($filePath)) {
+        file_put_contents($filePath, $newText, FILE_APPEND);
+        sendMessage($chatId, "Faylga yangi matn qo'shildi: " . $fileName);
+    } else {
+        sendMessage($chatId, "Bunday fayl topilmadi.");
+    }
+}
+
+// 3. Fayllar ro'yxatini ko'rsatish
 function listFiles($baseDir, $chatId) {
     $files = scandir($baseDir);
     $files = array_diff($files, ['.', '..']); // "." va ".." ni olib tashlash
@@ -72,7 +87,7 @@ function listFiles($baseDir, $chatId) {
     sendMessage($chatId, $message);
 }
 
-// 3. Papka yaratish
+// 4. Papka yaratish
 function createFolder($folderName, $baseDir, $chatId) {
     $folderPath = $baseDir . "/" . $folderName;
     if (!is_dir($folderPath)) {
@@ -83,7 +98,7 @@ function createFolder($folderName, $baseDir, $chatId) {
     }
 }
 
-// 4. Faylni o'chirish
+// 5. Faylni o'chirish
 function deleteFile($fileName, $baseDir, $chatId) {
     $filePath = $baseDir . "/" . $fileName;
     if (file_exists($filePath)) {
@@ -94,35 +109,36 @@ function deleteFile($fileName, $baseDir, $chatId) {
     }
 }
 
-// 5. Faylni qayta nomlash
-function renameFile($oldName, $newName, $baseDir, $chatId) {
-    $oldPath = $baseDir . "/" . $oldName;
-    $newPath = $baseDir . "/" . $newName;
-    if (file_exists($oldPath)) {
-        rename($oldPath, $newPath);
-        sendMessage($chatId, "Fayl muvaffaqiyatli qayta nomlandi: " . $newName);
+// 6. Faylga izoh qo'shish
+function addCommentToFile($fileName, $baseDir, $comment, $chatId) {
+    $filePath = $baseDir . "/" . $fileName;
+    if (file_exists($filePath)) {
+        $commentFile = $filePath . ".comment";
+        file_put_contents($commentFile, $comment . "\n", FILE_APPEND);
+        sendMessage($chatId, "Izoh muvaffaqiyatli qo'shildi: " . $fileName);
     } else {
         sendMessage($chatId, "Bunday fayl topilmadi.");
     }
 }
 
-// 6. Foydalanuvchiga xabar yuborish
+// 7. Foydalanuvchiga xabar yuborish
 function sendMessage($chatId, $message) {
     global $apiUrl;
     file_get_contents("$apiUrl/sendMessage?chat_id=$chatId&text=" . urlencode($message));
 }
 
-// 7. Fayl URL'ini ko'rsatish
-function getFileUrl($fileName, $baseDir, $baseUrl, $chatId) {
-    $filePath = $baseDir . "/" . $fileName;
-    if (file_exists($filePath)) {
-        $fileUrl = $baseUrl . "/uploads/" . urlencode($fileName);
-        sendMessage($chatId, "Fayl URL'si: $fileUrl");
-    } else {
-        sendMessage($chatId, "Bunday fayl topilmadi.");
-    }
+// 8. Foydalanuvchiga yordam ko'rsatish
+function showHelp($chatId) {
+    $message = "Quyidagi buyruqlarni ishlatishingiz mumkin:\n";
+    $message .= "/upload - Fayl yuklash\n";
+    $message .= "/list - Fayllar ro'yxatini ko'rsatish\n";
+    $message .= "/mkdir <papka nomi> - Papka yaratish\n";
+    $message .= "/delete <fayl nomi> - Faylni o'chirish\n";
+    $message .= "/edit <fayl nomi> <matn> - Faylga matn qo'shish\n";
+    $message .= "/comment <fayl nomi> <izoh> - Faylga izoh qo'shish\n";
+    $message .= "/help - Yordam\n";
+    sendMessage($chatId, $message);
 }
-
 
 // Buyruqlarni qayta ishlash
 if ($fileId) {
@@ -135,16 +151,22 @@ if ($fileId) {
 } elseif (strpos($messageText, "/delete") === 0) {
     $fileName = trim(str_replace("/delete", "", $messageText));
     deleteFile($fileName, $baseDir, $chatId);
-} elseif (strpos($messageText, "/rename") === 0) {
-    $parts = explode(" ", trim(str_replace("/rename", "", $messageText)));
+} elseif (strpos($messageText, "/edit") === 0) {
+    $parts = explode(" ", trim(str_replace("/edit", "", $messageText)), 2);
     if (count($parts) == 2) {
-        renameFile($parts[0], $parts[1], $baseDir, $chatId);
+        editFile($parts[0], $baseDir, $chatId, $parts[1]);
     } else {
-        sendMessage($chatId, "Buyruq noto'g'ri. Format: /rename eski_nomi yangi_nomi");
+        sendMessage($chatId, "Buyruq noto'g'ri. Format: /edit fayl_nomi matn");
     }
-} elseif (strpos($messageText, "/url") === 0) {
-    $fileName = trim(str_replace("/url", "", $messageText));
-    getFileUrl($fileName, $baseDir, $baseUrl, $chatId);
+} elseif (strpos($messageText, "/comment") === 0) {
+    $parts = explode(" ", trim(str_replace("/comment", "", $messageText)), 2);
+    if (count($parts) == 2) {
+        addCommentToFile($parts[0], $baseDir, $parts[1], $chatId);
+    } else {
+        sendMessage($chatId, "Buyruq noto'g'ri. Format: /comment fayl_nomi izoh");
+    }
+} elseif (strpos($messageText, "/help") === 0) {
+    showHelp($chatId);
 } else {
     sendMessage($chatId, "Buyruq noto'g'ri yoki tanib bo'lmadi.");
 }
