@@ -1,7 +1,7 @@
 <?php
 
 // Bot tokenini o'rnating
-$botToken = "BOT_TOKEN_HERE";
+$botToken = "7295475589:AAFZ20mG7vYEe7D79XOiuta7MPff4AzayUM";
 $apiUrl = "https://api.telegram.org/bot$botToken";
 $baseUrl = "https://telegrambot-production-7458.up.railway.app"; // O'zingizning domeningizni kiriting
 
