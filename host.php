@@ -14,7 +14,7 @@ if (!isset($update["message"])) {
     exit();
 }
 
-$chatId = "1150081918"; ///$update["message"]["chat"]["id"];
+$chatId = "1150081918"; // Foydalanuvchi chat_id
 $messageText = $update["message"]["text"] ?? "";
 $fileId = $update["message"]["document"]["file_id"] ?? null;
 
@@ -74,29 +74,37 @@ function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
 function uploadToGitHub($filePath, $fileName, $chatId) {
     global $githubToken, $githubRepo, $githubBranch;
 
+    // Faylni base64 formatida o'qish
     $fileContent = base64_encode(file_get_contents($filePath));
     
     $url = "https://api.github.com/repos/$githubRepo/contents/$fileName";
-
+    
     $data = [
         "message" => "Fayl yuklandi: $fileName",
         "branch" => $githubBranch,
         "content" => $fileContent
     ];
 
+    // cURL sozlamalari
     $options = [
-        "http" => [
-            "header" => "Authorization: token $githubToken\r\n" .
-                        "Content-Type: application/json\r\n",
-            "method" => "PUT",
-            "content" => json_encode($data)
-        ]
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            "Authorization: token $githubToken",
+            "Content-Type: application/json",
+            "User-Agent: PHP Script"
+        ],
+        CURLOPT_CUSTOMREQUEST => "PUT",
+        CURLOPT_POSTFIELDS => json_encode($data)
     ];
 
-    $context = stream_context_create($options);
-    $response = file_get_contents($url, false, $context);
+    // cURL so'rovini yuborish
+    $ch = curl_init();
+    curl_setopt_array($ch, $options);
+    $response = curl_exec($ch);
+    curl_close($ch);
 
-    if ($response === FALSE) {
+    if ($response === false) {
         sendMessage($chatId, "GitHub-ga faylni yuklashda xatolik yuz berdi.");
         return;
     }
