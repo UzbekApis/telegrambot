@@ -1,7 +1,7 @@
 <?php
 
 // Bot tokenini o'rnating
-$botToken = "7295475589:AAFZ20mG7vYEe7D79XOiuta7MPff4AzayUM";
+$botToken = "BOT_TOKEN_HERE";
 $apiUrl = "https://api.telegram.org/bot$botToken";
 $baseUrl = "https://telegrambot-production-7458.up.railway.app"; // O'zingizning domeningizni kiriting
 
@@ -29,12 +29,27 @@ function uploadFile($fileId, $baseDir, $botToken, $apiUrl, $chatId) {
     // Telegram serveridan fayl ma'lumotlarini olish
     $filePathResponse = file_get_contents("$apiUrl/getFile?file_id=$fileId");
     $filePathResponse = json_decode($filePathResponse, TRUE);
+    
+    // Faylni olishda xatolikni tekshirish
+    if (!isset($filePathResponse["result"]["file_path"])) {
+        sendMessage($chatId, "Faylni olishda xatolik yuz berdi.");
+        return;
+    }
+    
     $filePath = $filePathResponse["result"]["file_path"];
     $fileUrl = "https://api.telegram.org/file/bot$botToken/$filePath";
-
+    
     // Faylni saqlash
     $savePath = $baseDir . "/" . basename($filePath);
-    file_put_contents($savePath, file_get_contents($fileUrl));
+    $fileContent = file_get_contents($fileUrl);
+    
+    // Faylni yuklab olishda xatolikni tekshirish
+    if ($fileContent === false) {
+        sendMessage($chatId, "Faylni yuklab olishda xatolik yuz berdi.");
+        return;
+    }
+
+    file_put_contents($savePath, $fileContent);
 
     // Javob yuborish
     sendMessage($chatId, "Fayl muvaffaqiyatli yuklandi: " . basename($filePath));
@@ -130,7 +145,8 @@ if ($fileId) {
 } elseif (strpos($messageText, "/url") === 0) {
     $fileName = trim(str_replace("/url", "", $messageText));
     getFileUrl($fileName, $baseDir, $baseUrl, $chatId);
-}else {
+} else {
     sendMessage($chatId, "Buyruq noto'g'ri yoki tanib bo'lmadi.");
 }
 
+?>
