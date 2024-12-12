@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Bot Webhook Setup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      text-align: center;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .log {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 5px;
+      text-align: left;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Telegram Bot Webhook Setup</h1>
+    <input type="text" id="botToken" placeholder="Enter your Bot Token" size="40">
+    <input type="text" id="webhookUrl" placeholder="Enter your Webhook URL" size="40">
+    <button id="setWebhook">Set Webhook</button>
+    <div class="log" id="log">
+      <strong>Logs:</strong>
+      <div id="logContent"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('setWebhook').addEventListener('click', async () => {
+      const botToken = document.getElementById('botToken').value;
+      const webhookUrl = document.getElementById('webhookUrl').value;
+      const log = document.getElementById('logContent');
+
+      if (!botToken || !webhookUrl) {
+        log.innerHTML += `<p style="color: red;">Error: Bot Token and Webhook URL are required.</p>`;
+        return;
+      }
+
+      log.innerHTML += `<p>Setting webhook...</p>`;
+
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url: webhookUrl })
+        });
+
+        const result = await response.json();
+
+        if (result.ok) {
+          log.innerHTML += `<p style="color: green;">Webhook set successfully: ${result.description}</p>`;
+        } else {
+          log.innerHTML += `<p style="color: red;">Failed to set webhook: ${result.description}</p>`;
+        }
+      } catch (error) {
+        log.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
