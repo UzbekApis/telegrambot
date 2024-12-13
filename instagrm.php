@@ -2,14 +2,22 @@
 
 $logFilePath = 'process_log.txt';
 
+if (!is_writable($logFilePath)) {
+    chmod($logFilePath, 0666); // Ruxsatlarni o'zgartirish
+}
+
 // Fayl yo'nalishini tekshirish va kerakli xususiyatlar bilan ochish
 function openLogFile($filePath) {
     if (!file_exists($filePath)) {
-        // Fayl mavjud emas bo'lsa, yangisini yaratamiz
-        touch($filePath);
+        touch($filePath); // Faylni yaratish
     }
-    // Faylga yozishga ochamiz (mode 'a' — qo'shish uchun)
-    return fopen($filePath, 'a');
+    
+    // Faylga yozish imkoniyati bor-yo'qligini tekshirish
+    $logFile = fopen($filePath, 'a');
+    if ($logFile === false) {
+        logMessage("Faylni ochishda xatolik: $filePath", true);
+    }
+    return $logFile;
 }
 
 // Log yozish funksiyasi
