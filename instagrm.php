@@ -2,7 +2,7 @@
 // Fayllar yo'llari
 $cookieFilePath = __DIR__ . '/cookies.txt'; // Cookie faylni "UzbekApis/telegrambot" ichida saqlash
 $downloadedReelPath = __DIR__ . '/downloaded_reel.mp4'; // Yuklangan video fayli shu katalogda saqlanadi
-
+$cookief = file_get_contents(__DIR__ . '/cookies.txt'); /
 $loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
 $reelsUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/'; // REEL_ID o‘rniga haqiqiy Reels ID kiriting.
 
@@ -54,6 +54,6 @@ if (isset($matches[1])) {
 
     echo "Reels video yuklandi va '$downloadedReelPath' ga saqlandi!";
 } else {
-    echo "Reels video topilmadi yoki yuklab bo‘lmadi. fayl: " . $cookieFilePath . " down file : " . $downloadedReelPath . " code : " .$html;
+    echo "Reels video topilmadi yoki yuklab bo‘lmadi. fayl: " . $cookieFilePath . " down file : " . $downloadedReelPath . " code : " .$html . " cook file" . $cookief;
 }
 ?>
