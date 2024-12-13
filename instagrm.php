@@ -1,94 +1,124 @@
 <?php
-// Fayllar yo'llari
-$cookieFilePath = __DIR__ . '/cookies.txt'; // Cookie faylni saqlash yo‘li
-$downloadedReelPath = __DIR__ . '/downloaded_reel.mp4'; // Yuklangan video fayl yo‘li
+
+// Fayllar yo‘llari
+$cookieFilePath = __DIR__ . '/cookies.txt'; // Cookie fayli
+$downloadedReelPath = __DIR__ . '/downloaded_reel.mp4'; // Yuklangan video
+
+// Instagram API URL'lari
 $loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
-$reelsUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/'; // REEL_ID ni haqiqiy ID bilan almashtiring.
+$reelsUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/'; // REEL_ID joyiga haqiqiy Reels URL
 
-$username = 'a.l1_07'; // Instagram foydalanuvchi nomi
-$password = '09110620Ali'; // Instagram parolingiz
+// Foydalanuvchi ma'lumotlari
+$username = 'a.l1_07';
+$password = '09110620Ali';
 
-// 1. CSRF-token olish
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, 'https://www.instagram.com/');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HEADER, true);
-curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath); // Cookie faylni saqlash
-curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'
-]);
-$response = curl_exec($ch);
-curl_close($ch);
-
-// CSRF-tokenni chiqarib olish
-preg_match('/csrftoken=([^;]+)/', $response, $matches);
-$csrfToken = $matches[1] ?? '';
-
-if (!$csrfToken) {
-    die("CSRF-token topilmadi. Antibot himoyasi yo‘l qo‘ymayapti.\n");
-}
-
-// 2. Login so‘rovi
+// Login uchun so'rov
+echo "Instagram hisobiga kirish...\n";
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $loginUrl);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath); // Cookie faylni yangilash
+curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath);
 curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/x-www-form-urlencoded',
-    "X-CSRFToken: $csrfToken",
     'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'
 ]);
 
+// CSRF tokenini olish uchun so'rov
+curl_setopt($ch, CURLOPT_HEADER, true);
+$initialResponse = curl_exec($ch);
+preg_match('/^set-cookie: csrftoken=(.*?);/mi', $initialResponse, $csrfMatches);
+$csrfToken = $csrfMatches[1] ?? null;
+
+curl_setopt($ch, CURLOPT_HEADER, false);
 $postFields = http_build_query([
     'username' => $username,
-    'enc_password' => "#PWD_INSTAGRAM_BROWSER:0:".time().":$password",
+    'enc_password' => '#PWD_INSTAGRAM_BROWSER:0:' . time() . ':' . $password,
     'queryParams' => '{}',
     'optIntoOneTap' => 'false'
 ]);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-
 $loginResponse = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-// Login javobini tekshirish
+// Login muvaffaqiyatli bo‘lmagan holatlar
 if ($httpCode !== 200) {
-    die("Login amalga oshmadi. HTTP kod: $httpCode, Javob: $loginResponse\n");
-}
-echo "Login muvaffaqiyatli.\n";
+    echo "Login amalga oshmadi. HTTP kod: $httpCode, Javob: $loginResponse\n";
 
-// 3. Reels sahifasini olish
+    // 2FA aniqlash
+    $response = json_decode($loginResponse, true);
+    if (isset($response['two_factor_required']) && $response['two_factor_required']) {
+        $twoFactorIdentifier = $response['two_factor_info']['two_factor_identifier'];
+        echo "Ikki faktorli autentifikatsiya talab qilindi.\n";
+        echo "Telefon raqamingiz: " . $response['two_factor_info']['obfuscated_phone_number'] . "\n";
+
+        // Kodni foydalanuvchidan so'rash
+        echo "Qo'shimcha autentifikatsiya kodini kiriting: ";
+        $authCode = trim(fgets(STDIN));
+
+        // 2FA so'rovini yuborish
+        $twoFactorLoginUrl = 'https://www.instagram.com/accounts/login/ajax/two_factor/';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $twoFactorLoginUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath);
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "X-CSRFToken: $csrfToken",
+            'Content-Type: application/x-www-form-urlencoded',
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'
+        ]);
+
+        $twoFactorPostData = http_build_query([
+            'username' => $username,
+            'verification_code' => $authCode,
+            'identifier' => $twoFactorIdentifier,
+            'trust_this_device' => '1'
+        ]);
+
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $twoFactorPostData);
+        $twoFactorResponse = curl_exec($ch);
+        $twoFactorHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($twoFactorHttpCode === 200) {
+            echo "Ikki faktorli autentifikatsiya muvaffaqiyatli amalga oshirildi.\n";
+        } else {
+            die("Ikki faktorli autentifikatsiya amalga oshmadi. Javob: $twoFactorResponse\n");
+        }
+    } else {
+        die("Login muvaffaqiyatsiz tugadi.\n");
+    }
+}
+
+// Login muvaffaqiyatli bo‘lsa, reels videoni yuklash
+echo "Login muvaffaqiyatli amalga oshirildi.\n";
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $reelsUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
 $html = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-// HTTP javobni tekshirish
-if ($httpCode !== 200) {
-    die("Reels sahifasiga ulanishda xatolik. HTTP kod: $httpCode\n");
-}
-
-// 4. Reels video URL'ini chiqarib olish
+// Sahifadan video URL'ni chiqarib olish
 preg_match('/"video_url":"([^"]+)"/', $html, $matches);
-if (!isset($matches[1])) {
-    die("Reels video topilmadi.\n");
+if (isset($matches[1])) {
+    $videoUrl = stripslashes($matches[1]);
+    echo "Reels video URL: $videoUrl\n";
+
+    // Videoni yuklab olish
+    $ch = curl_init($videoUrl);
+    $fp = fopen($downloadedReelPath, 'wb');
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+    curl_exec($ch);
+    fclose($fp);
+    curl_close($ch);
+
+    echo "Reels video yuklandi va '$downloadedReelPath' faylida saqlandi!\n";
+} else {
+    echo "Reels video topilmadi yoki yuklab bo‘lmadi.\n";
 }
-$videoUrl = stripslashes($matches[1]);
-echo "Reels video URL: $videoUrl\n";
-
-// 5. Videoni yuklab olish
-$ch = curl_init($videoUrl);
-$fp = fopen($downloadedReelPath, 'wb');
-curl_setopt($ch, CURLOPT_FILE, $fp);
-curl_exec($ch);
-curl_close($ch);
-fclose($fp);
-
-echo "Reels video '$downloadedReelPath' ga yuklandi.\n";
 ?>
