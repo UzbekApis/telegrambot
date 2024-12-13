@@ -31,8 +31,8 @@ if (curl_errno($ch)) {
 // So'rovni yopish
 curl_close($ch);
 
-// Qaytarilgan javobni chiqarish
-echo "<pre>";
-echo "SnapInsta dan qaytgan ma'lumotlar:\n\n";
-echo htmlspecialchars($response); // Server javobini HTML xavfsiz chiqish uchun
-echo "</pre>";
+// Qaytarilgan javobni chiqari
+//echo "SnapInsta dan qaytgan ma'lumotlar:\n\n";
+//echo htmlspecialchars($response); // Server javobini HTML xavfsiz chiqish uchun
+//echo "</pre>";
+echo $response;
