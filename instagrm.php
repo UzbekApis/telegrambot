@@ -54,6 +54,6 @@ if (isset($matches[1])) {
 
     echo "Reels video yuklandi va '$downloadedReelPath' ga saqlandi!";
 } else {
-    echo "Reels video topilmadi yoki yuklab bo‘lmadi. fayl: " . $cookieFilePath . " down file : " . $downloadedReelPath;
+    echo "Reels video topilmadi yoki yuklab bo‘lmadi. fayl: " . $cookieFilePath . " down file : " . $downloadedReelPath . " code : " .$html;
 }
 ?>
