@@ -11,6 +11,11 @@ $reelsUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/'; // REEL_ID o‘rniga 
 $username = 'a.l1_07';
 $password = '09110620Ali';
 
+// Xatoliklarni ko'rsatish uchun funktsiya
+function showError($message) {
+    echo '<div style="color:red; font-weight: bold;">Error: ' . htmlspecialchars($message) . '</div>';
+}
+
 // Login uchun cURL so'rovi
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $loginUrl);
@@ -36,46 +41,53 @@ curl_close($ch);
 // Login javobini tahlil qilish
 $responseData = json_decode($response, true);
 if ($httpCode === 400 && isset($responseData['two_factor_required'])) {
-    echo "Ikki bosqichli autentifikatsiya talab qilinmoqda.\n";
+    echo "<h3>Ikki bosqichli autentifikatsiya talab qilinmoqda.</h3>";
     $twoFactorIdentifier = $responseData['two_factor_info']['two_factor_identifier'];
 
-    // Foydalanuvchidan 2FA kodni kiritish so'raladi
-    echo "Qo'shimcha autentifikatsiya kodini kiriting: ";
-    $twoFactorCode = trim(fgets(STDIN));
+    // 2FA kodi kiritish uchun HTML forma
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['twoFactorCode'])) {
+        $twoFactorCode = $_POST['twoFactorCode'];
 
-    // 2FA uchun so'rov yuborish
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $loginUrl);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath);
-    curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/x-www-form-urlencoded',
-        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
-    ]);
+        // 2FA uchun so'rov yuborish
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $loginUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath);
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/x-www-form-urlencoded',
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
+        ]);
 
-    $twoFactorFields = http_build_query([
-        'username' => $username,
-        'verificationCode' => $twoFactorCode,
-        'two_factor_identifier' => $twoFactorIdentifier,
-    ]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $twoFactorFields);
-    $twoFactorResponse = curl_exec($ch);
-    $twoFactorHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+        $twoFactorFields = http_build_query([
+            'username' => $username,
+            'verificationCode' => $twoFactorCode,
+            'two_factor_identifier' => $twoFactorIdentifier,
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $twoFactorFields);
+        $twoFactorResponse = curl_exec($ch);
+        $twoFactorHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-    if ($twoFactorHttpCode === 200) {
-        echo "Muvaffaqiyatli login amalga oshirildi!\n";
+        if ($twoFactorHttpCode === 200) {
+            echo "<h3>Muvaffaqiyatli login amalga oshirildi!</h3>";
+        } else {
+            showError("2FA autentifikatsiyasi muvaffaqiyatsiz bo‘ldi. Javob: $twoFactorResponse");
+            exit;
+        }
     } else {
-        echo "2FA autentifikatsiyasi muvaffaqiyatsiz bo‘ldi. Javob: $twoFactorResponse\n";
-        exit;
+        echo '<form method="POST" action="">
+                <label for="twoFactorCode">2FA kodi:</label>
+                <input type="text" id="twoFactorCode" name="twoFactorCode" required>
+                <button type="submit">Yuborish</button>
+              </form>';
     }
 } elseif ($httpCode !== 200) {
-    echo "Login amalga oshmadi. HTTP kod: $httpCode, Javob: $response\n";
+    showError("Login amalga oshmadi. HTTP kod: $httpCode, Javob: $response");
     exit;
 } else {
-    echo "Muvaffaqiyatli login qilindi!\n";
+    echo "<h3>Muvaffaqiyatli login qilindi!</h3>";
 }
 
 // Reels sahifasini olish va video yuklab olish
@@ -100,8 +112,8 @@ if (isset($matches[1])) {
     fclose($fp);
     curl_close($ch);
 
-    echo "Reels video yuklandi va '$downloadedReelPath' saqlandi!\n";
+    echo "<h4>Reels video yuklandi va '$downloadedReelPath' saqlandi!</h4>";
 } else {
-    echo "Reels video topilmadi yoki yuklab bo‘lmadi.\n";
+    showError("Reels video topilmadi yoki yuklab bo‘lmadi.");
 }
 ?>
