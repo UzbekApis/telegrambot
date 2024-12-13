@@ -12,7 +12,7 @@ $loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
 $reelsUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/'; // REEL_ID o‘rniga haqiqiy Reels ID kiriting.
 
 $username = 'a.l1_07';
-$password = '09110620';
+$password = '09110620Ali';
 
 // Login uchun cURL so'rovi
 $ch = curl_init();
