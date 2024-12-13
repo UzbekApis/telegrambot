@@ -104,5 +104,6 @@ $twoFactorIdentifier = login($username, $password, $loginUrl, $cookieFilePath);
 echo "<h3>Barcha loglar faylda saqlanmoqda:</h3>";
 echo "<p>Log fayli yo'nalishi: <code>$logFilePath</code></p>";
 echo '<p>Loglarni to`liq ko`rish uchun <a href="' . htmlspecialchars($logFilePath) . '" target="_blank">shu yerni bosing</a>.</p>';
+echo " echos : " . file_get_contents($logFilePath);
 
 ?>
