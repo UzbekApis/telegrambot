@@ -52,44 +52,50 @@ if ($httpCode === 400 && isset($responseData['two_factor_required'])) {
     echo "<h3>Ikki bosqichli autentifikatsiya talab qilinmoqda.</h3>";
     $twoFactorIdentifier = $responseData['two_factor_info']['two_factor_identifier'];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['twoFactorCode'])) {
-        // 2FA kodi yuborish
-        $twoFactorCode = $_POST['twoFactorCode'];
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $loginUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath);
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/x-www-form-urlencoded',
-            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
-        ]);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Foydalanuvchi Zaxira kodini yuborishi kerak
+        if (isset($_POST['backupCode'])) {
+            // Backup Code yuboriladi
+            $backupCode = $_POST['backupCode'];  // Zaxira kodini olish
 
-        $twoFactorFields = http_build_query([
-            'username' => $username,
-            'verificationCode' => $twoFactorCode,
-            'two_factor_identifier' => $twoFactorIdentifier,
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $twoFactorFields);
+            // POST so'rovi yuborish
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $loginUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath);
+            curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/x-www-form-urlencoded',
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
+            ]);
+            
+            $twoFactorFields = http_build_query([
+                'username' => $username,
+                'backupCode' => $backupCode,
+                'two_factor_identifier' => $twoFactorIdentifier,
+            ]);
 
-        $twoFactorResponse = curl_exec($ch);
-        $twoFactorHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $twoFactorFields);
 
-        if ($twoFactorHttpCode === 200) {
-            echo "<h3>Muvaffaqiyatli login amalga oshirildi!</h3>";
+            $twoFactorResponse = curl_exec($ch);
+            $twoFactorHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($twoFactorHttpCode === 200) {
+                echo "<h3>Zaxira kodi yordamida muvaffaqiyatli kirildi!</h3>";
+            } else {
+                showError("Zaxira kodi bilan autentifikatsiya muvaffaqiyatsiz bo‘ldi.");
+            }
         } else {
-            showError("2FA autentifikatsiyasi muvaffaqiyatsiz bo‘ldi. Javob: $twoFactorResponse");
-            exit;
+            echo '<form method="POST" action="">
+                    <label for="backupCode">Zaxira kodi:</label>
+                    <input type="text" id="backupCode" name="backupCode" required>
+                    <button type="submit">Yuborish</button>
+                  </form>';
         }
     } else {
-        // 2FA kodi formasi
-        echo '<form method="POST" action="">
-                <label for="twoFactorCode">2FA kodi:</label>
-                <input type="text" id="twoFactorCode" name="twoFactorCode" required>
-                <button type="submit">Yuborish</button>
-              </form>';
+        echo "<h3>Ikki bosqichli autentifikatsiya amalga oshirilgan</h3>";
     }
 } elseif ($httpCode !== 200) {
     showError("Login amalga oshmadi. HTTP kod: $httpCode, Javob: $response");
