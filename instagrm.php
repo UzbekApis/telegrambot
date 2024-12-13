@@ -2,10 +2,16 @@
 
 $logFilePath = 'process_log.txt';
 
-if(!is_dir($logFilePath)){
-    file_put_contents("process_log.txt","assa");
+// Fayl yo'nalishini tekshirish va kerakli xususiyatlar bilan ochish
+function openLogFile($filePath) {
+    if (!file_exists($filePath)) {
+        // Fayl mavjud emas bo'lsa, yangisini yaratamiz
+        touch($filePath);
+    }
+    // Faylga yozishga ochamiz (mode 'a' — qo'shish uchun)
+    return fopen($filePath, 'a');
 }
-// Fayl yo'nalishi
+
 // Log yozish funksiyasi
 function logMessage($message, $isError = false) {
     global $logFilePath;
@@ -14,8 +20,14 @@ function logMessage($message, $isError = false) {
     $logType = $isError ? 'ERROR' : 'INFO';
     $formattedMessage = "[$timestamp] [$logType] $message\n";
 
+    // Log faylini ochish
+    $logFile = openLogFile($logFilePath);
+
     // Faylga yozish
-    file_put_contents($logFilePath, $formattedMessage, FILE_APPEND);
+    fwrite($logFile, $formattedMessage);
+
+    // Faylni yopish
+    fclose($logFile);
 
     // Foydalanuvchi interfeysida ko'rsatish
     if ($isError) {
