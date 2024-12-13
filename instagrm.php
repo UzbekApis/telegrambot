@@ -1,4 +1,8 @@
 <?php
+// Fayllar yo'llari
+$cookieFilePath = __DIR__ . '/cookies.txt'; // Cookie faylni "UzbekApis/telegrambot" ichida saqlash
+$downloadedReelPath = __DIR__ . '/downloaded_reel.mp4'; // Yuklangan video fayli shu katalogda saqlanadi
+
 $loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
 $reelsUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/'; // REEL_ID o‘rniga haqiqiy Reels ID kiriting.
 
@@ -10,8 +14,8 @@ $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $loginUrl);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_COOKIEJAR, 'cookies.txt'); // Cookie faylni saqlash
-curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt');
+curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath); // Cookie faylni saqlash
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/x-www-form-urlencoded',
     'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'
@@ -30,7 +34,7 @@ curl_close($ch);
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $reelsUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt'); // Cookie faylni ishlatish
+curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath); // Cookie faylni ishlatish
 $html = curl_exec($ch);
 curl_close($ch);
 
@@ -42,13 +46,13 @@ if (isset($matches[1])) {
 
     // Videoni yuklab olish
     $ch = curl_init($videoUrl);
-    $fp = fopen('downloaded_reel.mp4', 'wb'); // Yuklangan fayl
+    $fp = fopen($downloadedReelPath, 'wb'); // Yuklangan faylni saqlash uchun belgilangan yo'l
     curl_setopt($ch, CURLOPT_FILE, $fp);
     curl_exec($ch);
     fclose($fp);
     curl_close($ch);
 
-    echo "Reels video yuklandi!";
+    echo "Reels video yuklandi va '$downloadedReelPath' ga saqlandi!";
 } else {
     echo "Reels video topilmadi yoki yuklab bo‘lmadi.";
 }
