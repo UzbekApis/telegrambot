@@ -1,22 +1,31 @@
 <?php
 
-// Instagram ma'lumotlari
-$username = 'a.l1_07';
-$password = '09110620Ali';
-$backupCode = '63940728'; // Zaxiraviy kod
-$reelsUrl = 'https://www.instagram.com/reel/Czp75l9C-mG/';
-
 // Fayl yo'nalishi
-$cookieFilePath = __DIR__ . '/cookies.txt'; // Cookie saqlash yo'nalishi
+$logFilePath = __DIR__ . '/process_log.txt';
 
-// Instagram API URL'lari
-$loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
+// Log yozish funksiyasi
+function logMessage($message, $isError = false) {
+    global $logFilePath;
 
-function showError($message) {
-    echo '<div style="color:red; font-weight: bold;">Error: ' . htmlspecialchars($message) . '</div>';
+    $timestamp = date('Y-m-d H:i:s');
+    $logType = $isError ? 'ERROR' : 'INFO';
+    $formattedMessage = "[$timestamp] [$logType] $message\n";
+
+    // Faylga yozish
+    file_put_contents($logFilePath, $formattedMessage, FILE_APPEND);
+
+    // Foydalanuvchi interfeysida ko'rsatish
+    if ($isError) {
+        echo '<div style="color:red; font-weight: bold;">' . htmlspecialchars($formattedMessage) . '</div>';
+    } else {
+        echo '<div style="color:green;">' . htmlspecialchars($formattedMessage) . '</div>';
+    }
 }
 
+// Curl so'rov funksiyasi
 function sendCurlRequest($url, $postFields = null, $cookieFilePath = '', $customCookies = '') {
+    global $logFilePath;
+
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -40,96 +49,57 @@ function sendCurlRequest($url, $postFields = null, $cookieFilePath = '', $custom
     }
 
     $response = curl_exec($ch);
+
     if ($response === false) {
-        showError("cURL Error: " . curl_error($ch));
+        $error = curl_error($ch);
+        logMessage("cURL error for URL $url: $error", true);
+        curl_close($ch);
+        return false;
     }
 
     curl_close($ch);
+
+    logMessage("Successful cURL request to $url.");
     return $response;
 }
 
-// 1. Login qilish jarayoni
+// Misol uchun ishlatiladigan funksiyalar
 function login($username, $password, $loginUrl, $cookieFilePath) {
-    echo "<h3>Login jarayoni boshlanmoqda...</h3>";
-
+    logMessage("Login jarayoni boshlandi.");
     $response = sendCurlRequest($loginUrl, [
         'username' => $username,
         'password' => $password,
     ], $cookieFilePath);
 
     if (!$response) {
+        logMessage("Login muvaffaqiyatsiz tugadi.", true);
         return false;
     }
 
     $responseData = json_decode($response, true);
-
     if (isset($responseData['authenticated']) && $responseData['authenticated']) {
-        echo "<h3>Login muvaffaqiyatli yakunlandi!</h3>";
+        logMessage("Login muvaffaqiyatli yakunlandi.");
         return true;
     } elseif (isset($responseData['two_factor_required'])) {
+        logMessage("Ikki bosqichli autentifikatsiya talab qilinmoqda.");
         return $responseData['two_factor_info']['two_factor_identifier'];
     } else {
-        showError("Login muvaffaqiyatsiz: " . $response);
+        logMessage("Login muvaffaqiyatsiz: " . $response, true);
         return false;
     }
 }
 
-// 2. Ikki bosqichli autentifikatsiya
-function twoFactorAuth($username, $backupCode, $twoFactorIdentifier, $loginUrl, $cookieFilePath) {
-    echo "<h3>Ikki bosqichli autentifikatsiya boshlanmoqda...</h3>";
+// Foydalanish
+$username = 'a.l1_07';
+$password = '09110620Ali';
+$loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
+$cookieFilePath = __DIR__ . '/cookies.txt';
 
-    $response = sendCurlRequest($loginUrl, [
-        'username' => $username,
-        'verification_code' => $backupCode,
-        'two_factor_identifier' => $twoFactorIdentifier,
-    ], $cookieFilePath);
-
-    if (!$response) {
-        return false;
-    }
-
-    $responseData = json_decode($response, true);
-
-    if (isset($responseData['authenticated']) && $responseData['authenticated']) {
-        echo "<h3>Ikki bosqichli autentifikatsiya muvaffaqiyatli yakunlandi!</h3>";
-        return true;
-    } else {
-        showError("Ikki bosqichli autentifikatsiya muvaffaqiyatsiz bo'ldi.");
-        return false;
-    }
-}
-
-// 3. Reels ma'lumotlarini yuklash
-function fetchReelsVideo($reelsUrl, $cookieFilePath) {
-    echo "<h3>Reels yuklanmoqda...</h3>";
-
-    $response = sendCurlRequest($reelsUrl, null, $cookieFilePath);
-
-    if (!$response) {
-        showError("Reels ma'lumotlarini olishda xato yuz berdi.");
-        return false;
-    }
-
-    preg_match('/"video_url":"([^"]+)"/', $response, $matches);
-    if (isset($matches[1])) {
-        $videoUrl = stripslashes($matches[1]);
-        echo "<h3>Reels video topildi:</h3>";
-        echo "<a href='$videoUrl' target='_blank'>$videoUrl</a>";
-        return true;
-    } else {
-        showError("Reels video URL topilmadi yoki yuklab bo'lmaydi.");
-        return false;
-    }
-}
-
-// Bosqichma-bosqich bajariladigan asosiy kod
 $twoFactorIdentifier = login($username, $password, $loginUrl, $cookieFilePath);
 
-if ($twoFactorIdentifier && !twoFactorAuth($username, $backupCode, $twoFactorIdentifier, $loginUrl, $cookieFilePath)) {
-    exit;
-}
+// Loglar haqida foydalanuvchiga ma'lumot berish
+echo "<h3>Barcha loglar faylda saqlanmoqda:</h3>";
+echo "<p>Log fayli yo'nalishi: <code>$logFilePath</code></p>";
+echo '<p>Loglarni to`liq ko`rish uchun <a href="' . htmlspecialchars($logFilePath) . '" target="_blank">shu yerni bosing</a>.</p>';
 
-if (!fetchReelsVideo($reelsUrl, $cookieFilePath)) {
-    exit;
-}
 ?>
