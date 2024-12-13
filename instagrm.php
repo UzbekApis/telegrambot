@@ -1,129 +1,38 @@
 <?php
+// URL, form maydoni uchun
+$instagramUrl = "https://www.instagram.com/reel/DDZVe3gNDI4/"; // Instagram post URL kiriting
 
-$logFilePath = 'process_log.txt';
+// Snapinsta URL manzili
+$snapinstaUrl = "https://snapinsta.app/";
 
-if (!is_writable($logFilePath)) {
-    chmod($logFilePath, 0666); // Ruxsatlarni o'zgartirish
-}
+// cURL so'rovini yaratish
+$ch = curl_init($snapinstaUrl);
 
-// Fayl yo'nalishini tekshirish va kerakli xususiyatlar bilan ochish
-function openLogFile($filePath) {
-    if (!file_exists($filePath)) {
-        touch($filePath); // Faylni yaratish
-    }
-    
-    // Faylga yozish imkoniyati bor-yo'qligini tekshirish
-    $logFile = fopen($filePath, 'a');
-    if ($logFile === false) {
-        logMessage("Faylni ochishda xatolik: $filePath", true);
-    }
-    return $logFile;
-}
+// POST so'rov parametrlari
+$postData = [
+    'url' => $instagramUrl, // Formada kerakli qiymat
+];
 
-// Log yozish funksiyasi
-function logMessage($message, $isError = false) {
-    global $logFilePath;
+// cURL sozlamalarini o'rnatish
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
 
-    $timestamp = date('Y-m-d H:i:s');
-    $logType = $isError ? 'ERROR' : 'INFO';
-    $formattedMessage = "[$timestamp] [$logType] $message\n";
+// So'rovni yuborish
+$response = curl_exec($ch);
 
-    // Log faylini ochish
-    $logFile = openLogFile($logFilePath);
-
-    // Faylga yozish
-    fwrite($logFile, $formattedMessage);
-
-    // Faylni yopish
-    fclose($logFile);
-
-    // Foydalanuvchi interfeysida ko'rsatish
-    if ($isError) {
-        echo '<div style="color:red; font-weight: bold;">' . htmlspecialchars($formattedMessage) . '</div>';
-    } else {
-        echo '<div style="color:green;">' . htmlspecialchars($formattedMessage) . '</div>';
-    }
-}
-
-// Curl so'rov funksiyasi
-function sendCurlRequest($url, $postFields = null, $cookieFilePath = '', $customCookies = '') {
-    global $logFilePath;
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/x-www-form-urlencoded',
-        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'
-    ]);
-
-    if ($postFields) {
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postFields));
-    }
-
-    if (!empty($cookieFilePath)) {
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFilePath);
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFilePath);
-    }
-
-    if (!empty($customCookies)) {
-        curl_setopt($ch, CURLOPT_COOKIE, $customCookies);
-    }
-
-    $response = curl_exec($ch);
-
-    if ($response === false) {
-        $error = curl_error($ch);
-        logMessage("cURL error for URL $url: $error", true);
-        curl_close($ch);
-        return false;
-    }
-
+// Xatoliklarni tekshirish
+if (curl_errno($ch)) {
+    echo "So'rovda xatolik yuz berdi: " . curl_error($ch);
     curl_close($ch);
-
-    logMessage("Successful cURL request to $url.");
-    return $response;
+    exit;
 }
 
-// Misol uchun ishlatiladigan funksiyalar
-function login($username, $password, $loginUrl, $cookieFilePath) {
-    logMessage("Login jarayoni boshlandi.");
-    $response = sendCurlRequest($loginUrl, [
-        'username' => $username,
-        'password' => $password,
-    ], $cookieFilePath);
+// So'rovni yopish
+curl_close($ch);
 
-    if (!$response) {
-        logMessage("Login muvaffaqiyatsiz tugadi.", true);
-        return false;
-    }
-
-    $responseData = json_decode($response, true);
-    if (isset($responseData['authenticated']) && $responseData['authenticated']) {
-        logMessage("Login muvaffaqiyatli yakunlandi.");
-        return true;
-    } elseif (isset($responseData['two_factor_required'])) {
-        logMessage("Ikki bosqichli autentifikatsiya talab qilinmoqda.");
-        return $responseData['two_factor_info']['two_factor_identifier'];
-    } else {
-        logMessage("Login muvaffaqiyatsiz: " . $response, true);
-        return false;
-    }
-}
-
-// Foydalanish
-$username = 'a.l1_07';
-$password = '09110620Ali';
-$loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
-$cookieFilePath = 'cookies.txt';
-
-$twoFactorIdentifier = login($username, $password, $loginUrl, $cookieFilePath);
-
-// Loglar haqida foydalanuvchiga ma'lumot berish
-echo "<h3>Barcha loglar faylda saqlanmoqda:</h3>";
-echo "<p>Log fayli yo'nalishi: <code>$logFilePath</code></p>";
-echo '<p>Loglarni to`liq ko`rish uchun <a href="' . htmlspecialchars($logFilePath) . '" target="_blank">shu yerni bosing</a>.</p>';
-echo " echos : " . file_get_contents($logFilePath);
-
-?>
+// Qaytarilgan javobni chiqarish
+echo "<pre>";
+echo "SnapInsta dan qaytgan ma'lumotlar:\n\n";
+echo htmlspecialchars($response); // Server javobini HTML xavfsiz chiqish uchun
+echo "</pre>";
