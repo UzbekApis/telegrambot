@@ -1,6 +1,6 @@
 <?php
 $loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
-$mediaUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/?igsh=OGxqcnozcWI0YnIy'; // POST_ID o‘rniga haqiqiy ID qo‘ying.
+$reelsUrl = 'https://www.instagram.com/reel/DDZVe3gNDI4/'; // REEL_ID o‘rniga haqiqiy Reels ID kiriting.
 
 $username = 'a.l1_07';
 $password = '09110620';
@@ -26,30 +26,30 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
 $response = curl_exec($ch);
 curl_close($ch);
 
-// Yuklash uchun rasm/video manbasini olish
+// Reels sahifasini olish
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $mediaUrl);
+curl_setopt($ch, CURLOPT_URL, $reelsUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt');
+curl_setopt($ch, CURLOPT_COOKIEFILE, 'cookies.txt'); // Cookie faylni ishlatish
 $html = curl_exec($ch);
 curl_close($ch);
 
-// HTML dan video yoki rasmni chiqarish
-preg_match('/"display_url":"([^"]+)"/', $html, $matches);
+// Sahifadan video URL'ini chiqarib olish
+preg_match('/"video_url":"([^"]+)"/', $html, $matches);
 if (isset($matches[1])) {
-    $imageUrl = stripslashes($matches[1]);
-    echo "Rasm/video URL: $imageUrl\n";
+    $videoUrl = stripslashes($matches[1]); // Video URL'ini olish
+    echo "Reels video URL: $videoUrl\n";
 
-    // Faylni yuklab olish
-    $ch = curl_init($imageUrl);
-    $fp = fopen('downloaded_media.jpg', 'wb');
+    // Videoni yuklab olish
+    $ch = curl_init($videoUrl);
+    $fp = fopen('downloaded_reel.mp4', 'wb'); // Yuklangan fayl
     curl_setopt($ch, CURLOPT_FILE, $fp);
     curl_exec($ch);
     fclose($fp);
     curl_close($ch);
 
-    echo "Fayl yuklandi!";
+    echo "Reels video yuklandi!";
 } else {
-    echo "Rasm yoki video topilmadi.";
+    echo "Reels video topilmadi yoki yuklab bo‘lmadi.";
 }
 ?>
