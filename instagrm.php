@@ -1,9 +1,9 @@
 <?php
 
-$logFilePath = '/process_log.txt';
+$logFilePath = 'process_log.txt';
 
 if(!is_dir($logFilePath)){
-    file_put_contents("process_log.txt","");
+    file_put_contents("process_log.txt","assa");
 }
 // Fayl yo'nalishi
 // Log yozish funksiyasi
@@ -96,7 +96,7 @@ function login($username, $password, $loginUrl, $cookieFilePath) {
 $username = 'a.l1_07';
 $password = '09110620Ali';
 $loginUrl = 'https://www.instagram.com/accounts/login/ajax/';
-$cookieFilePath = '/cookies.txt';
+$cookieFilePath = 'cookies.txt';
 
 $twoFactorIdentifier = login($username, $password, $loginUrl, $cookieFilePath);
 
