@@ -1,8 +1,11 @@
 <?php
 
-// Fayl yo'nalishi
 $logFilePath = __DIR__ . '/process_log.txt';
 
+if(!is_dir($logFilePath)){
+    file_put_contents("process_log.txt","");
+}
+// Fayl yo'nalishi
 // Log yozish funksiyasi
 function logMessage($message, $isError = false) {
     global $logFilePath;
