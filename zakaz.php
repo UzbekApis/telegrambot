@@ -15,7 +15,6 @@ $mysqli = new mysqli($host, $user, $pass, $db, $port);
 if ($mysqli->connect_error) {
     die("Ma'lumotlar bazasi xatosi: " . $mysqli->connect_error);
 }*/
-<?php
 // Ma'lumotlar bazasi konfiguratsiyasi
 $host = 'mysql.railway.internal'; // Railway ichki xosti
 $db   = 'railway'; // Ma'lumotlar bazasi nomi
@@ -46,7 +45,7 @@ if ($mysqli->query($table_sql) === TRUE) {
 
 // Ulani uzish
 $mysqli->close();
-?>
+
 
 
 // Telegramdan kelayotgan ma'lumotlar
