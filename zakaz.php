@@ -1,7 +1,7 @@
 <?php
 // Bot tokeni va Admin ID
-$token = "BOT_TOKENINGIZ";
-$admin_id = "ADMIN_CHAT_ID"; // Adminning Telegram ID'si
+$token = "5452547137:AAGCwUieVadqwaSMMCC-R_G3cQZ26OHrCHc";
+$admin_id = "1150081918"; // Adminning Telegram ID'si
 $apiURL = "https://api.telegram.org/bot$token";
 
 // Railway DATABASE_URL dan MySQL ulanishini o'qish
@@ -29,7 +29,7 @@ if ($mysqli->connect_error) {
 }
 
 // Jadvalni yaratish SQL kodi
-$table_sql = "CREATE TABLE IF NOT EXISTS products (
+/*$table_sql = "CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
@@ -45,7 +45,7 @@ if ($mysqli->query($table_sql) === TRUE) {
 
 // Ulani uzish
 $mysqli->close();
-
+*/
 
 
 // Telegramdan kelayotgan ma'lumotlar
