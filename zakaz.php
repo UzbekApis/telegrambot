@@ -5,7 +5,7 @@ $admin_id = "ADMIN_CHAT_ID"; // Adminning Telegram ID'si
 $apiURL = "https://api.telegram.org/bot$token";
 
 // Railway DATABASE_URL dan MySQL ulanishini o'qish
-$host = 'mysql.railway.internal'; // Railway ichki xost
+/*$host = 'mysql.railway.internal'; // Railway ichki xost
 $db   = 'railway'; // Ma'lumotlar bazasi nomi
 $user = 'root'; // Railway foydalanuvchi nomi
 $pass = 'GgOPWyUqoTVdhtSMbaJWiCvvEwUXESpD'; // Railway paroli
@@ -14,7 +14,40 @@ $mysqli = new mysqli($host, $user, $pass, $db, $port);
 
 if ($mysqli->connect_error) {
     die("Ma'lumotlar bazasi xatosi: " . $mysqli->connect_error);
+}*/
+<?php
+// Ma'lumotlar bazasi konfiguratsiyasi
+$host = 'mysql.railway.internal'; // Railway ichki xosti
+$db   = 'railway'; // Ma'lumotlar bazasi nomi
+$user = 'root'; // Railway foydalanuvchi nomi
+$pass = 'GgOPWyUqoTVdhtSMbaJWiCvvEwUXESpD'; // Railway paroli
+$port = 3306; // Port raqami
+$mysqli = new mysqli($host, $user, $pass, $db, $port);
+
+// Xatolikni tekshirish
+if ($mysqli->connect_error) {
+    die("Bazaga ulanishda xatolik: " . $mysqli->connect_error);
 }
+
+// Jadvalni yaratish SQL kodi
+$table_sql = "CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    image VARCHAR(255) NOT NULL
+)";
+
+// SQLni bajarish
+if ($mysqli->query($table_sql) === TRUE) {
+    echo "✅ 'products' jadvali muvaffaqiyatli yaratildi yoki allaqachon mavjud.";
+} else {
+    echo "❌ Jadval yaratishda xatolik: " . $mysqli->error;
+}
+
+// Ulani uzish
+$mysqli->close();
+?>
+
 
 // Telegramdan kelayotgan ma'lumotlar
 $content = file_get_contents("php://input");
