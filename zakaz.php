@@ -1,52 +1,22 @@
 <?php
 // Bot tokeni va Admin ID
 $token = "5452547137:AAGCwUieVadqwaSMMCC-R_G3cQZ26OHrCHc";
-$admin_id = "1150081918"; // Adminning Telegram ID'si
+$admin_id = "1150081918"; 
 $apiURL = "https://api.telegram.org/bot$token";
 
-// Railway DATABASE_URL dan MySQL ulanishini o'qish
-/*$host = 'mysql.railway.internal'; // Railway ichki xost
-$db   = 'railway'; // Ma'lumotlar bazasi nomi
-$user = 'root'; // Railway foydalanuvchi nomi
-$pass = 'GgOPWyUqoTVdhtSMbaJWiCvvEwUXESpD'; // Railway paroli
-$port = 3306; // Port raqami
+// MySQL bazaga ulanish konfiguratsiyasi
+$host = 'mysql.railway.internal'; 
+$db   = 'railway'; 
+$user = 'root'; 
+$pass = 'GgOPWyUqoTVdhtSMbaJWiCvvEwUXESpD'; 
+$port = 3306; 
 $mysqli = new mysqli($host, $user, $pass, $db, $port);
 
+// Bazaga ulanish xatosi
 if ($mysqli->connect_error) {
-    die("Ma'lumotlar bazasi xatosi: " . $mysqli->connect_error);
-}*/
-// Ma'lumotlar bazasi konfiguratsiyasi
-$host = 'mysql.railway.internal'; // Railway ichki xosti
-$db   = 'railway'; // Ma'lumotlar bazasi nomi
-$user = 'root'; // Railway foydalanuvchi nomi
-$pass = 'GgOPWyUqoTVdhtSMbaJWiCvvEwUXESpD'; // Railway paroli
-$port = 3306; // Port raqami
-$mysqli = new mysqli($host, $user, $pass, $db, $port);
-
-// Xatolikni tekshirish
-if ($mysqli->connect_error) {
-    die("Bazaga ulanishda xatolik: " . $mysqli->connect_error);
+    error_log("MySQL ulanish xatosi: " . $mysqli->connect_error);
+    die("⛔ Bot vaqtincha ishlamayapti. Iltimos, keyinroq urinib ko'ring.");
 }
-
-// Jadvalni yaratish SQL kodi
-/*$table_sql = "CREATE TABLE IF NOT EXISTS products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    image VARCHAR(255) NOT NULL
-)";
-
-// SQLni bajarish
-if ($mysqli->query($table_sql) === TRUE) {
-    echo "✅ 'products' jadvali muvaffaqiyatli yaratildi yoki allaqachon mavjud.";
-} else {
-    echo "❌ Jadval yaratishda xatolik: " . $mysqli->error;
-}
-
-// Ulani uzish
-$mysqli->close();
-*/
-
 
 // Telegramdan kelayotgan ma'lumotlar
 $content = file_get_contents("php://input");
@@ -57,19 +27,25 @@ $text = trim($message['text'] ?? '');
 
 // Inline tugmalar va admin panel
 if ($text === "/start") {
-    sendKeyboard($chat_id, "Salom! Bizning botga xush kelibsiz!", [['Buyurtma Berish']]);
-} elseif ($text === "Buyurtma Berish") {
+    sendKeyboard($chat_id, "🌟 Salom! Bizning botga xush kelibsiz!", [['📦 Buyurtma Berish']]);
+} elseif ($text === "📦 Buyurtma Berish") {
     showProducts($chat_id, $mysqli);
 } elseif ($text === "/admin" && $chat_id == $admin_id) {
-    sendKeyboard($chat_id, "🔧 Admin paneliga xush kelibsiz!", [['Maxsulot Qo\'shish']]);
-} elseif ($text === "Maxsulot Qo'shish" && $chat_id == $admin_id) {
-    sendMessage($chat_id, "✏️ Mahsulot nomini, narxini va rasm URL'sini quyidagicha yuboring:\n\n`Mahsulot nomi | 12345 | https://rasm_url`");
+    sendKeyboard($chat_id, "🔧 Admin paneli!", [['➕ Mahsulot Qo\'shish', '📝 Mahsulotlar'], ['📊 Statistika', '❌ Mahsulot O‘chirish']]);
+} elseif ($text === "➕ Mahsulot Qo'shish" && $chat_id == $admin_id) {
+    sendMessage($chat_id, "✏️ Mahsulot qo‘shish uchun quyidagicha yuboring:\n`Mahsulot nomi | 12345 | https://rasm_url`");
 } elseif ($chat_id == $admin_id && strpos($text, '|') !== false) {
     addProduct($chat_id, $text, $mysqli);
+} elseif ($text === "📝 Mahsulotlar" && $chat_id == $admin_id) {
+    showProducts($chat_id, $mysqli);
+} elseif ($text === "❌ Mahsulot O‘chirish" && $chat_id == $admin_id) {
+    sendMessage($chat_id, "❌ O‘chirish uchun mahsulot nomini yuboring:");
+} elseif ($text === "📊 Statistika" && $chat_id == $admin_id) {
+    showStats($chat_id, $mysqli);
 } elseif ($text === "Sotib olish") {
-    sendMessage($chat_id, "✅ Buyurtmangiz qabul qilindi. Tez orada siz bilan bog'lanamiz!");
+    saveOrder($chat_id, $mysqli);
 } else {
-    sendMessage($chat_id, "Mavjud buyruqlar: /start yoki /admin (faqat admin uchun)");
+    sendMessage($chat_id, "📌 Buyruqlar:\n/start - Boshlash\n/admin - Admin paneli (faqat admin uchun)");
 }
 
 // Funksiya: Tugmalar yuborish
@@ -91,7 +67,7 @@ function showProducts($chat_id, $mysqli)
             sendPhoto($chat_id, $row['image'], $product_text, [['Sotib olish']]);
         }
     } else {
-        sendMessage($chat_id, "📭 Hozircha mahsulotlar mavjud emas.");
+        sendMessage($chat_id, "📭 Mahsulotlar yo'q.");
     }
 }
 
@@ -103,9 +79,9 @@ function addProduct($chat_id, $text, $mysqli)
         $stmt = $mysqli->prepare("INSERT INTO products (name, price, image) VALUES (?, ?, ?)");
         $stmt->bind_param("sds", $name, $price, $image);
         $stmt->execute();
-        sendMessage($chat_id, "✅ Mahsulot qo'shildi: $name");
+        sendMessage($chat_id, "✅ Mahsulot qo‘shildi: $name");
     } else {
-        sendMessage($chat_id, "⚠️ Xatolik: Ma'lumotlarni to'g'ri yuboring! `Nom | Narx | Rasm URL`");
+        sendMessage($chat_id, "⚠️ Noto'g'ri format. To'g'ri yuboring: `Nom | Narx | Rasm URL`");
     }
 }
 
@@ -115,22 +91,21 @@ function sendMessage($chat_id, $text)
     sendRequest(['chat_id' => $chat_id, 'text' => $text, 'parse_mode' => 'Markdown']);
 }
 
-// Funksiya: Rasm yuborish
-function sendPhoto($chat_id, $photo_url, $caption, $buttons)
+// Funksiya: Statistika
+function showStats($chat_id, $mysqli)
 {
-    global $apiURL;
-    $inline_keyboard = json_encode(['keyboard' => $buttons, 'resize_keyboard' => true]);
-    $data = [
-        'chat_id' => $chat_id,
-        'photo' => $photo_url,
-        'caption' => $caption,
-        'parse_mode' => 'Markdown',
-        'reply_markup' => $inline_keyboard
-    ];
-    sendRequest($data, 'sendPhoto');
+    $product_count = $mysqli->query("SELECT COUNT(*) AS count FROM products")->fetch_assoc()['count'];
+    sendMessage($chat_id, "📊 Statistika:\n🛍 Mahsulotlar soni: $product_count");
 }
 
-// Asosiy so'rov funksiyasi
+// Funksiya: Buyurtmani saqlash
+function saveOrder($chat_id, $mysqli)
+{
+    $stmt = $mysqli->prepare("INSERT INTO orders (user_id, product_id, status) VALUES (?, ?, ?)");
+    // Qo'shimcha yozuvlar qo'shing
+}
+
+// Funksiya: Asosiy so'rov
 function sendRequest($data, $method = 'sendMessage')
 {
     global $apiURL;
@@ -143,4 +118,3 @@ function sendRequest($data, $method = 'sendMessage')
     curl_exec($ch);
     curl_close($ch);
 }
-?>
