@@ -122,7 +122,7 @@ telefon /faks:
 Shaxsiy g‘azna hisob varag‘i:       O‘quvchining ism familyasi: $studentName                            100022860332237092100072046 
 MFO: 00014STIR: 206892464XXTUT: 92310
 
-Maktab direktori________________ _____               Foydalanuvchi: Ota -onasi ___________( imzo) ( imzo)'
+Maktab direktori________________ _____               Foydalanuvchi: Ota -onasi ___________( imzo) ( imzo)';
     // Ma'lumotlarni saqlash
   
 
