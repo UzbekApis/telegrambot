@@ -61,10 +61,8 @@ if ($currentStep == 'ask_class') {
 
 if ($currentStep == 'collect_data') {
     $data = explode(',', $text);
-    if (count($data) != 4) {
-        sendMessage($chatId, "Iltimos, to'g'ri formatda maʼlumot kiriting:\nOʻquvchi ismi, Otasi yoki Onasi ismi, Pasport seriyasi, Pasport berilgan sana (YYYY-MM-DD).");
-        exit;
-    }
+       /// sendMessage($chatId, "Iltimos, to'g'ri formatda maʼlumot kiriting:\nOʻquvchi ismi, Otasi yoki Onasi ismi, Pasport seriyasi, Pasport berilgan sana (YYYY-MM-DD).");
+     ///   exit
 
     // Trim va ajratilgan ma'lumotlar
     $studentName = trim($data[0]);
