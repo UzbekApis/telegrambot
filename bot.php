@@ -51,7 +51,7 @@ $user = $result->fetch_assoc();
 $currentStep = $user['current_step'];
 
 if ($currentStep == 'ask_class') {
-		$s = "AllaberganovAlibek-Jabborov Mansur-AD6282936-21.01.2007";
+		$s = "Allaberganov Alibek-Jabborov Mansur-AD6282936-21.01.2007";
 	$datas = explode('-', $s);
 	$studentName = trim($datas[0]);
     $parentName = trim($datas[1]);
@@ -73,7 +73,7 @@ $className", [
 }
 
 if ($currentStep == 'collect_data') {
-    $data = explode(',', $text);
+    $data = explode('-', $text);
        /// sendMessage($chatId, "Iltimos, to'g'ri formatda maʼlumot kiriting:\nOʻquvchi ismi, Otasi yoki Onasi ismi, Pasport seriyasi, Pasport berilgan sana (YYYY-MM-DD).");
      ///   exit
 
