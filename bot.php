@@ -48,11 +48,25 @@ if ($callbackData) {
 // Xabar bosqichlari
 $result = $conn->query("SELECT current_step, class_name FROM users WHERE chat_id='$chatId'");
 $user = $result->fetch_assoc();
-$currentStep = $user['current_step'] ?? '';
+$currentStep = $user['current_step'];
 
 if ($currentStep == 'ask_class') {
+		$s = "Allaberganov Alibek, Jabborov Mansur, AD6282936, 21-01-2007";
+	$studentName = trim($data[0]);
+    $parentName = trim($data[1]);
+    $passportSeries = trim($data[2]);
+    $passportDate = trim($data[3]);
+    $className = $user['class_name'];
+    
+	$datas = explode(',', $s);
     $conn->query("UPDATE users SET class_name='$text', current_step='show_menu' WHERE chat_id='$chatId'");
-    sendInlineKeyboard($chatId, "Sinf o'rnatildi. Quyidagi variantlardan birini tanlang:", [
+    sendInlineKeyboard($chatId, "Sinf o'rnatildi. Quyidagi variantlardan birini tanlang: $datas
+
+$studentName
+$parentName
+$passportSeries
+$passportDate
+$className", [
         [['text' => "Sinfni o'zgartirish", 'callback_data' => "change_class"]],
         [['text' => "Boshlash", 'callback_data' => "start"]],
     ]);
